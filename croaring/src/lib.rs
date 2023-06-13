@@ -6,3 +6,4 @@ pub use bitmap::BitmapIterator;
 pub use treemap::Treemap;
 
 pub use bitmap::BitmapView;
+pub use bitmap::{Frozen, Native, Portable};
