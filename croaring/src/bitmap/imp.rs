@@ -745,13 +745,13 @@ impl Bitmap {
     /// # Examples
     ///
     /// ```
-    /// use croaring::Bitmap;
+    /// use croaring::{Bitmap, Portable};
     ///
     /// let original_bitmap: Bitmap = (1..5).collect();
     ///
-    /// let serialized_buffer = original_bitmap.serialize();
+    /// let serialized_buffer = original_bitmap.serialize::<Portable>();
     ///
-    /// let deserialized_bitmap = Bitmap::deserialize(&serialized_buffer);
+    /// let deserialized_bitmap = Bitmap::deserialize::<Portable>(&serialized_buffer);
     ///
     /// assert_eq!(original_bitmap, deserialized_bitmap);
     /// ```
@@ -771,7 +771,7 @@ impl Bitmap {
     /// # Examples
     ///
     /// ```
-    /// use croaring::Bitmap;
+    /// use croaring::{Bitmap, Portable};
     ///
     /// let original_bitmap_1: Bitmap = (1..5).collect();
     /// let original_bitmap_2: Bitmap = (1..10).collect();
@@ -779,7 +779,7 @@ impl Bitmap {
     /// let mut data = Vec::new();
     /// for bitmap in [original_bitmap_1, original_bitmap_2] {
     ///     data.clear();
-    ///     bitmap.serialize_into(&mut data);
+    ///     bitmap.serialize_into::<Portable>(&mut data);
     ///     // do something with data
     /// }
     /// ```
@@ -797,16 +797,16 @@ impl Bitmap {
     /// # Examples
     ///
     /// ```
-    /// use croaring::Bitmap;
+    /// use croaring::{Bitmap, Portable};
     ///
     /// let original_bitmap: Bitmap = (1..5).collect();
-    /// let serialized_buffer = original_bitmap.serialize();
+    /// let serialized_buffer = original_bitmap.serialize::<Portable>();
     ///
-    /// let deserialized_bitmap = Bitmap::try_deserialize(&serialized_buffer);
+    /// let deserialized_bitmap = Bitmap::try_deserialize::<Portable>(&serialized_buffer);
     /// assert_eq!(original_bitmap, deserialized_bitmap.unwrap());
     ///
     /// let invalid_buffer: Vec<u8> = vec![3];
-    /// let deserialized_bitmap = Bitmap::try_deserialize(&invalid_buffer);
+    /// let deserialized_bitmap = Bitmap::try_deserialize::<Portable>(&invalid_buffer);
     /// assert!(deserialized_bitmap.is_none());
     /// ```
     #[inline]
@@ -962,14 +962,14 @@ impl Bitmap {
     /// # Examples
     ///
     /// ```
-    /// use croaring::Bitmap;
+    /// use croaring::{Bitmap, Portable};
     ///
     /// let mut bitmap: Bitmap = (100..1000).collect();
     ///
     /// assert_eq!(bitmap.cardinality(), 900);
-    /// let old_size = bitmap.get_serialized_size_in_bytes();
+    /// let old_size = bitmap.get_serialized_size_in_bytes::<Portable>();
     /// assert!(bitmap.run_optimize());
-    /// let new_size = bitmap.get_serialized_size_in_bytes();
+    /// let new_size = bitmap.get_serialized_size_in_bytes::<Portable>();
     /// assert!(new_size < old_size);
     /// ```
     #[inline]

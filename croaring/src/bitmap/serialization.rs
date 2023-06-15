@@ -12,7 +12,7 @@ pub trait Deserializer {
 }
 
 pub trait ViewDeserializer {
-    unsafe fn deserialize_view(data: &[u8]) -> BitmapView<'_>;
+    fn deserialize_view(data: &[u8]) -> BitmapView<'_>;
 }
 
 pub enum Portable {}
@@ -68,14 +68,16 @@ impl ViewDeserializer for Portable {
     ///   [`Bitmap::serialize`]
     /// * Using this function (or the returned bitmap in any way) may execute unaligned memory accesses
     ///
-    unsafe fn deserialize_view<'a>(data: &'a [u8]) -> BitmapView {
+    fn deserialize_view<'a>(data: &'a [u8]) -> BitmapView {
         // portable_deserialize_size does some amount of checks, and returns zero if data cannot be valid
-        debug_assert_ne!(
-            ffi::roaring_bitmap_portable_deserialize_size(data.as_ptr().cast(), data.len()),
-            0,
-        );
-        let roaring = ffi::roaring_bitmap_portable_deserialize_frozen(data.as_ptr().cast());
-        BitmapView::take_heap(roaring)
+        unsafe {
+            debug_assert_ne!(
+                ffi::roaring_bitmap_portable_deserialize_size(data.as_ptr().cast(), data.len()),
+                0,
+            );
+            let roaring = ffi::roaring_bitmap_portable_deserialize_frozen(data.as_ptr().cast());
+            BitmapView::take_heap(roaring)
+        }
     }
 }
 
@@ -116,6 +118,30 @@ impl Deserializer for Native {
                 Some(Bitmap::take_heap(bitmap))
             } else {
                 None
+            }
+        }
+    }
+}
+
+impl ViewDeserializer for Native {
+    fn deserialize_view<'a>(data: &'a [u8]) -> BitmapView {
+        unsafe {
+            match data[0] {
+                1 => {
+                    // native
+                    let bitmap = ffi::roaring_bitmap_deserialize_safe(
+                        data.as_ptr() as *const c_void,
+                        data.len(),
+                    );
+                    BitmapView::take_heap(bitmap)
+                }
+                2 => {
+                    // portable
+                    Portable::deserialize_view(&data[1..])
+                }
+                _ => {
+                    panic!("Bad native data")
+                }
             }
         }
     }
@@ -167,11 +193,13 @@ impl ViewDeserializer for Frozen {
     ///   (in c with `roaring_bitmap_frozen_serialize`, or via [`Bitmap::serialize_frozen_into`]).
     /// * Its beginning must be aligned by 32 bytes.
     /// * data.len() must be equal exactly to the size of the frozen bitmap.
-    unsafe fn deserialize_view<'a>(data: &'a [u8]) -> BitmapView {
-        const REQUIRED_ALIGNMENT: usize = 32;
-        assert_eq!(data.as_ptr() as usize % REQUIRED_ALIGNMENT, 0);
+    fn deserialize_view<'a>(data: &'a [u8]) -> BitmapView {
+        unsafe {
+            const REQUIRED_ALIGNMENT: usize = 32;
+            assert_eq!(data.as_ptr() as usize % REQUIRED_ALIGNMENT, 0);
 
-        let roaring = ffi::roaring_bitmap_frozen_view(data.as_ptr().cast(), data.len());
-        BitmapView::take_heap(roaring)
+            let roaring = ffi::roaring_bitmap_frozen_view(data.as_ptr().cast(), data.len());
+            BitmapView::take_heap(roaring)
+        }
     }
 }
